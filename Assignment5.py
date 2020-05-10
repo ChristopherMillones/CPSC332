@@ -1,6 +1,9 @@
+import sys
+from PySide2.QtWidgets import QApplication, QMainWindow, QTableWidgetItem
+from PySide2 import QtCore, QtGui, QtWidgets
+from art_gallery import Ui_MainWindow
 import mysql
 from mysql.connector import Error
-
 
 class Art_Gallery:
 
@@ -13,8 +16,7 @@ class Art_Gallery:
                 self.cursor = self.cxn.cursor(prepared=True)
                 self.cursor.execute("select database();")
                 record = self.cursor.fetchone()
-            self.cursor.execute("""SELECT TABLES""")
-            self.tables = self.cursor.fetchall()
+
         except Error as e:
             print("Error while connecting to MYSQL", e)
 
@@ -24,41 +26,120 @@ class Art_Gallery:
             self.cxn.close()
 
     def displayTable(self, table):
-        for i in range(len(self.tables)):
-            if table == self.tables[i]:
-                # SELECTING a TABLE and Displaying Information
-                self.cursor.execute("""SELECT * FROM {tab}""".format(tab=table))
-                record = self.cursor.fetchall()
-            else:
-                print("ERROR TABLE NOT FOUND")
+        # SELECTING a TABLE and Displaying Information
+        self.cursor.execute("""SELECT * FROM {tab}""".format(tab=table))
+        record = self.cursor.fetchall()
+        return record
 
     def selectRecordFromArtist(self, Data):
-        self.cursor.execute("""SELECT * FROM artist WHERE FLname= '{name}' OR phone= '{data}' OR address= '{data}' 
-        OR birthPlace= '{data}' OR age= '{data'}' OR styleOfArt= '{data}'""".format(data=Data))
+        self.cursor.execute("""SELECT * FROM artist WHERE FLname= '{data}' OR phone= '{data}' OR address= '{data}' 
+           OR birthPlace= '{data}' OR age= '{data'}' OR styleOfArt= '{data}'""".format(data=Data))
         record = self.cursor.fetchall()
+        return record
 
     def selectRecordFromArtShows(self, Data):
-        self.cursor.execute("""SELECT * FROM artshows WHERE contactNumber= '{name}' OR contact= '{data}' OR location= '{data}' 
-         OR dateShow= '{data}' OR timeShow= '{data'}'""".format(data=Data))
+        self.cursor.execute("""SELECT * FROM artshows WHERE contactNumber= '{data}' OR contact= '{data}' OR location= '{data}' 
+            OR dateShow= '{data}' OR timeShow= '{data'}'""".format(data=Data))
         record = self.cursor.fetchall()
+        return record
 
     def selectRecordFromArtWork(self, Data):
-        self.cursor.execute("""SELECT * FROM artwork WHERE typeOfArt= '{name}' OR dateCreated= '{data}' OR dateAcquired= '{data}' 
-         OR price= '{data}' OR location= '{data'}' OR title='{data{'""".format(data=Data))
+        self.cursor.execute("""SELECT * FROM artwork WHERE typeOfArt= '{data}' OR dateCreated= '{data}' OR dateAcquired= '{data}' 
+            OR price= '{data}' OR location= '{data'}' OR title='{data{'""".format(data=Data))
         record = self.cursor.fetchall()
+        return record
 
     def selectRecordFromCustomer(self, Data):
-        self.cursor.execute("""SELECT * FROM Customer WHERE artPreference= '{name}' OR phone= '{data}' 
-        OR customerNumber= '{data}' """.format(data=Data))
+        self.cursor.execute("""SELECT * FROM Customer WHERE artPreference= '{data}' OR phone= '{data}' 
+           OR customerNumber= '{data}' """.format(data=Data))
         record = self.cursor.fetchall()
-
+        return record
 
     def sortASC(self):
         self.cursor.execute("""SELECT * FROM customer ORDER BY customerNumber ASC """)
         record = self.cursor.fetchall()
-        print('\n')
+        return record
 
     def sortDESC(self):
         self.cursor.execute("""SELECT * FROM customer ORDER BY customerNumber DESC """)
         record = self.cursor.fetchall()
-        print('\n')
+        return record
+
+    def getColumnHeaders(self, table):
+        self.cursor.execute("""SHOW COLUMNS FROM {tab}""".format(tab=table))
+        record = self.cursor.fetchall()
+        return record
+
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+        self.PrintRecords()
+        self.ok_btn_1()
+        self.home_btn()
+        self.setWindowTitle("Art Gallery DB Simulation")
+
+        try:
+            self.cxn = mysql.connector.connect(user = "root", password = "Python1!", database = "art_gallery")
+            # CONNECTING TO THE DATABASE
+            if self.cxn.is_connected():
+                db_info = self.cxn.get_server_info()
+                self.cursor = self.cxn.cursor(prepared=True)
+                self.cursor.execute("select database();")
+                record = self.cursor.fetchone()
+                print(record)
+
+        except Error as e:
+            print("Error while connecting to MYSQL", e)
+
+
+
+    def getColumnHeaders(self, table):
+        self.cursor.execute("""SHOW COLUMNS FROM {tab}""".format(tab=table))
+        record = self.cursor.fetchall()
+        return record
+
+    def PrintRecords(self):
+        self.ui.printRecords.clicked.connect(self.menu1)
+
+    def menu1(self):
+        self.ui.stackedWidget.setCurrentIndex(1)
+
+    def home(self):
+        self.ui.stackedWidget.setCurrentIndex(0)
+
+    def ok_btn_1(self):
+        self.ui.ok_bttn_1.clicked.connect(self.test)
+
+    def home_btn(self):
+        self.ui.home_btn.clicked.connect(self.home)
+
+
+    def test(self):
+        rows = self.getColumnHeaders(self.ui.table_select_1.currentText().replace(" ","").lower())
+
+        self.col = []
+        for row in rows:
+            self.col.append(row[0])
+
+        print(self.col)
+
+        self.ui.table_widget_1.setColumnCount(len(self.col))
+        self.ui.table_widget_1.setRowCount(4)
+        self.ui.table_widget_1.setHorizontalHeaderLabels(self.col)
+
+
+
+
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
+
