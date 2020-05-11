@@ -4,6 +4,7 @@ from PySide2 import QtCore, QtGui, QtWidgets
 from art_gallery import Ui_MainWindow
 import mysql
 from mysql.connector import Error
+import math
 
 class Art_Gallery:
 
@@ -102,6 +103,12 @@ class MainWindow(QMainWindow):
         record = self.cursor.fetchall()
         return record
 
+    def displayTable(self, table):
+        # SELECTING a TABLE and Displaying Information
+        self.cursor.execute("""SELECT * FROM {tab}""".format(tab=table))
+        record = self.cursor.fetchall()
+        return record
+
     def PrintRecords(self):
         self.ui.printRecords.clicked.connect(self.menu1)
 
@@ -120,16 +127,29 @@ class MainWindow(QMainWindow):
 
     def test(self):
         rows = self.getColumnHeaders(self.ui.table_select_1.currentText().replace(" ","").lower())
+        data = self.displayTable(self.ui.table_select_1.currentText().replace(" ","").lower())
 
         self.col = []
+
+
         for row in rows:
             self.col.append(row[0])
 
-        print(self.col)
-
         self.ui.table_widget_1.setColumnCount(len(self.col))
-        self.ui.table_widget_1.setRowCount(4)
+        self.ui.table_widget_1.setRowCount(len(data))
         self.ui.table_widget_1.setHorizontalHeaderLabels(self.col)
+        self.insertDataIntoTable(self.ui.table_select_1.currentText().replace(" ","").lower(),data)
+
+    def insertDataIntoTable(self,table,data):
+
+        if table == "artist":
+                for x,row in zip(range(len(data)), data):
+                    self.ui.table_widget_1.setItem(x, 0, QTableWidgetItem(row[0]))
+                    self.ui.table_widget_1.setItem(x, 1, QTableWidgetItem(str(row[1])))
+                    self.ui.table_widget_1.setItem(x, 2, QTableWidgetItem(row[2]))
+                    self.ui.table_widget_1.setItem(x, 3, QTableWidgetItem(row[3]))
+                    self.ui.table_widget_1.setItem(x, 4, QTableWidgetItem(str(row[4])))
+                    self.ui.table_widget_1.setItem(x, 5, QTableWidgetItem(row[5]))
 
 
 
